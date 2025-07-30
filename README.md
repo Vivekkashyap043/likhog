@@ -20,7 +20,7 @@ A full-stack blog application built with React.js frontend and Node.js backend, 
 ## 🏗️ Project Structure
 
 ```
-blog-app/
+likhog/
 ├── client/                 # React.js frontend
 │   ├── public/
 │   ├── src/

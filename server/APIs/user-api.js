@@ -8,24 +8,8 @@ const nodemailer = require('nodemailer');
 const verifyToken = require('../Middlewares/verifyToken')
 require("dotenv").config();
 
-let use      // Check in users collection first
-      let user = await usercollection.findOne({ username: username });
-      if (user) {
-        return res.send({
-          fullName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || username.split('@')[0],
-          userType: 'user'
-        });
-      }
-      
-      // Check in authors collection
-      const authorscollection = req.app.get("authorscollection");
-      user = await authorscollection.findOne({ username: username });
-      if (user) {
-        return res.send({
-          fullName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || username.split('@')[0],
-          userType: 'author'
-        });
-      }articlescollection;
+let usercollection;
+let articlescollection;
 //get usercollection app
 userApp.use((req, res, next) => {
   usercollection = req.app.get("userscollection");
@@ -372,19 +356,20 @@ userApp.get(
     
     try {
       // Check in users collection first
-      let user = await userscollection.findOne({ username: username });
+      let user = await usercollection.findOne({ username: username });
       if (user) {
         return res.send({
-          fullName: `${user.firstName} ${user.lastName}`,
+          fullName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || username.split('@')[0],
           userType: 'user'
         });
       }
       
       // Check in authors collection
+      const authorscollection = req.app.get("authorscollection");
       user = await authorscollection.findOne({ username: username });
       if (user) {
         return res.send({
-          fullName: `${user.firstName} ${user.lastName}`,
+          fullName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || username.split('@')[0],
           userType: 'author'
         });
       }
