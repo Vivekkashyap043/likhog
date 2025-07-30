@@ -2,7 +2,7 @@
 // Central place to manage all API endpoints and base URLs
 
 // Base URL for the API server
-export const API_BASE_URL = 'http://localhost:4000';
+export const API_BASE_URL = 'https://likhog-server.onrender.com';
 
 // API endpoints organized by service
 export const API_ENDPOINTS = {

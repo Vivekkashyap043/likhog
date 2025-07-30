@@ -521,13 +521,22 @@
   
   .hero-image {
     margin-top: 3rem;
-    height: 300px;
+    height: auto;
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    padding: 2rem 1rem;
   }
   
   .floating-card {
     position: relative;
-    margin: 1rem;
+    margin: 0;
     animation: none;
+    width: 100%;
+    height: auto;
+    min-height: 120px;
+    padding: 1rem;
   }
   
   .floating-card.card-1,
@@ -539,6 +548,20 @@
     left: auto;
     right: auto;
     bottom: auto;
+  }
+  
+  .card-icon {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .floating-card h4 {
+    font-size: 1rem;
+    margin-bottom: 0.3rem;
+  }
+  
+  .floating-card p {
+    font-size: 0.8rem;
   }
   
   .section-title {
@@ -558,5 +581,51 @@
     width: 100%;
     max-width: 300px;
     justify-content: center;
+  }
+}
+
+/* Additional responsive breakpoint for smaller phones */
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 2rem;
+  }
+  
+  .hero-buttons {
+    padding: 0 1rem;
+  }
+  
+  .hero-image {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+    padding: 1rem 0.5rem;
+  }
+  
+  .floating-card {
+    min-height: 100px;
+    padding: 0.8rem;
+  }
+  
+  .card-icon {
+    font-size: 1.5rem;
+  }
+  
+  .floating-card h4 {
+    font-size: 0.9rem;
+  }
+  
+  .floating-card p {
+    font-size: 0.75rem;
+  }
+  
+  .section-title {
+    font-size: 1.8rem;
+  }
+  
+  .features-section {
+    padding: 4rem 0;
+  }
+  
+  .feature-card {
+    padding: 2rem 1.5rem;
   }
 }
