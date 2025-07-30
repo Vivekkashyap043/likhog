@@ -8,8 +8,24 @@ const nodemailer = require('nodemailer');
 const verifyToken = require('../Middlewares/verifyToken')
 require("dotenv").config();
 
-let usercollection;
-let articlescollection;
+let use      // Check in users collection first
+      let user = await usercollection.findOne({ username: username });
+      if (user) {
+        return res.send({
+          fullName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || username.split('@')[0],
+          userType: 'user'
+        });
+      }
+      
+      // Check in authors collection
+      const authorscollection = req.app.get("authorscollection");
+      user = await authorscollection.findOne({ username: username });
+      if (user) {
+        return res.send({
+          fullName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || username.split('@')[0],
+          userType: 'author'
+        });
+      }articlescollection;
 //get usercollection app
 userApp.use((req, res, next) => {
   usercollection = req.app.get("userscollection");
@@ -28,7 +44,8 @@ const transporter = nodemailer.createTransport({
 
 // Send verification email function
 const sendVerificationEmail = async (email, fullName, userType, verificationToken) => {
-    const verificationUrl = `http://localhost:3000/verify-email?token=${verificationToken}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'https://likhog.onrender.com';
+    const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
     
     const mailOptions = {
         from: process.env.EMAIL_USER,

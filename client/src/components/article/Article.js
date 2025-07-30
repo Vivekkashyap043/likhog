@@ -17,8 +17,35 @@ import { MdRestore } from "react-icons/md";
 import { FaHeart, FaRegHeart, FaEye, FaArrowLeft, FaSync } from "react-icons/fa";
 import { API_ENDPOINTS, API_BASE_URL } from "../../config/api";
 
+// Custom hook for responsive design
+const useResponsive = () => {
+  const [windowSize, setWindowSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return {
+    isMobile: windowSize.width <= 768,
+    isSmallMobile: windowSize.width <= 480,
+    width: windowSize.width
+  };
+};
+
 function Article() {
   const { state } = useLocation();
+  const { isMobile, isSmallMobile } = useResponsive();
   let { currentUser } = useSelector(
     (state) => state.userAuthorLoginReducer
   );
@@ -39,7 +66,7 @@ function Article() {
   // Fetch author details
   const fetchAuthorDetails = async (username) => {
     try {
-      const response = await axios.get(`http://localhost:4000/user-api/user-details/${username}`);
+      const response = await axios.get(`${API_BASE_URL}/user-api/user-details/${username}`);
       setAuthorInfo(response.data);
     } catch (error) {
       console.error('Error fetching author details:', error);
@@ -56,7 +83,7 @@ function Article() {
     try {
       if (showLoader) setIsRefreshingComments(true);
       
-      const response = await axios.get(`http://localhost:4000/user-api/article/${state.articleId}`);
+      const response = await axios.get(`${API_BASE_URL}/user-api/article/${state.articleId}`);
       if (response.data.message === "Article found") {
         const updatedArticle = response.data.article;
         
@@ -141,7 +168,7 @@ function Article() {
           // For older comments with email usernames, fetch full name
           if (username && username.includes('@')) {
             try {
-              const response = await axios.get(`http://localhost:4000/user-api/user-details/${username}`);
+              const response = await axios.get(`${API_BASE_URL}/user-api/user-details/${username}`);
               return { 
                 comment: normalizedComment, 
                 fullName: response.data.fullName || username.split('@')[0]
@@ -221,7 +248,7 @@ function Article() {
   // Increment view count when article is read (only once per user per article)
   const incrementViewCount = async () => {
     try {
-      await axiosWithToken.post(`http://localhost:4000/user-api/view/${state.articleId}`);
+      await axiosWithToken.post(`${API_BASE_URL}/user-api/view/${state.articleId}`);
     } catch (error) {
       console.error('Error incrementing view count:', error);
     }
@@ -231,7 +258,7 @@ function Article() {
   const handleLikeToggle = async () => {
     try {
       console.log('Toggling like for article:', state.articleId);
-      const res = await axiosWithToken.post(`http://localhost:4000/user-api/like/${state.articleId}`);
+      const res = await axiosWithToken.post(`${API_BASE_URL}/user-api/like/${state.articleId}`);
       console.log('Like toggle response:', res.data);
       
       // Update local state
@@ -254,7 +281,7 @@ function Article() {
 
   const deleteArticle = async() => {
     let res = await axiosWithToken.delete(
-      `http://localhost:4000/author-api/article/${currentArticle.articleId}`
+      `${API_BASE_URL}/author-api/article/${currentArticle.articleId}`
     );
     if (res.data.message === "article deleted") {
       setCurrentArticle({ ...currentArticle, status: false });
@@ -263,7 +290,7 @@ function Article() {
 
   const restoreArticle = async () => {
     let res = await axiosWithToken.put(
-      `http://localhost:4000/author-api/article/${currentArticle.articleId}`
+      `${API_BASE_URL}/author-api/article/${currentArticle.articleId}`
     );
     if (res.data.message === "article restored") {
       setCurrentArticle({ ...currentArticle, status: true });
@@ -281,7 +308,7 @@ function Article() {
     commentObj.dateOfComment = new Date().toISOString(); // Add current date
 
     let res = await axiosWithToken.post(
-      `http://localhost:4000/user-api/comment/${currentArticle.articleId}`,
+      `${API_BASE_URL}/user-api/comment/${currentArticle.articleId}`,
       commentObj
     );
     if (res.data.message === "Comment posted") {
@@ -316,7 +343,7 @@ function Article() {
     editedArticle.username = currentArticle.username;
 
     let res = await axiosWithToken.put(
-      "http://localhost:4000/author-api/article",
+      `${API_BASE_URL}/author-api/article`,
       editedArticle
     );
 
@@ -345,9 +372,9 @@ function Article() {
 
   return (
     <div style={{
-      background: '#f8fafc',
+      background: isMobile ? '#ffffff' : '#f8fafc',
       minHeight: '100vh',
-      padding: '2rem 1rem'
+      padding: isMobile ? '0' : '2rem 1rem'
     }}>
       <style>
         {`
@@ -359,8 +386,10 @@ function Article() {
       </style>
       {/* Simple Navigation */}
       <nav style={{
-        maxWidth: '800px',
-        margin: '0 auto 2rem auto'
+        maxWidth: isMobile ? '100%' : '800px',
+        margin: '0 auto 2rem auto',
+        padding: isMobile ? '1rem 0.5rem' : '0',
+        background: isMobile ? '#ffffff' : 'transparent'
       }}>
         <button 
           onClick={() => navigate(-1)}
@@ -368,11 +397,11 @@ function Article() {
             background: '#3b82f6',
             color: 'white',
             border: 'none',
-            padding: '0.75rem 1.5rem',
+            padding: isMobile ? '0.5rem 1rem' : '0.75rem 1.5rem',
             borderRadius: '8px',
             fontWeight: '500',
             transition: 'all 0.2s ease',
-            fontSize: '0.9rem',
+            fontSize: isSmallMobile ? '0.8rem' : '0.9rem',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem'
@@ -391,19 +420,20 @@ function Article() {
 
       {/* Main Content Container */}
       <div style={{
-        maxWidth: '800px',
-        margin: '0 auto'
+        maxWidth: isMobile ? '100%' : '800px',
+        margin: '0 auto',
+        padding: '0'
       }}>
         {articleEditStatus === false ? (
           /* Simple Article Layout */
           <div>
             {/* Main Article Container - Title, Content, and Like button in one box */}
             <div style={{
-              background: 'white',
-              borderRadius: '12px',
-              padding: '2rem',
-              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-              border: '1px solid #e5e7eb',
+              background: isMobile ? 'transparent' : 'white',
+              borderRadius: isMobile ? '0' : '12px',
+              padding: isMobile ? '1rem 0.5rem' : '2rem',
+              boxShadow: isMobile ? 'none' : '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+              border: isMobile ? 'none' : '1px solid #e5e7eb',
               marginBottom: '1.5rem'
             }}>
               {/* Category Badge */}
@@ -424,7 +454,7 @@ function Article() {
 
               {/* Title */}
               <h1 style={{
-                fontSize: '2.5rem',
+                fontSize: isSmallMobile ? '1.25rem' : isMobile ? '1.5rem' : '2.5rem',
                 fontWeight: '800',
                 color: '#1f2937',
                 lineHeight: '1.2',
@@ -442,15 +472,15 @@ function Article() {
                 marginBottom: '1.5rem'
               }}>
                 <div style={{
-                  width: '48px',
-                  height: '48px',
+                  width: isMobile ? '40px' : '48px',
+                  height: isMobile ? '40px' : '48px',
                   borderRadius: '50%',
                   background: '#3b82f6',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: 'white',
-                  fontSize: '1.25rem',
+                  fontSize: isMobile ? '1rem' : '1.25rem',
                   fontWeight: '600'
                 }}>
                   {(authorInfo ? authorInfo.fullName : (currentArticle.username?.split('@')[0] || 'A')).charAt(0).toUpperCase()}
@@ -504,17 +534,17 @@ function Article() {
 
               {/* Article Content */}
               <div style={{
-                lineHeight: '1.8',
-                fontSize: '1.125rem',
+                lineHeight: isMobile ? '1.6' : '1.8',
+                fontSize: isSmallMobile ? '0.95rem' : isMobile ? '1rem' : '1.125rem',
                 color: '#374151',
                 fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
                 marginBottom: '2rem'
               }}>
                 {(currentArticle.content || '').split('\n').map((paragraph, index) => (
                   <p key={index} style={{
-                    marginBottom: '1.5rem',
-                    fontSize: '1.125rem',
-                    lineHeight: '1.8',
+                    marginBottom: isMobile ? '1rem' : '1.5rem',
+                    fontSize: isSmallMobile ? '0.95rem' : isMobile ? '1rem' : '1.125rem',
+                    lineHeight: isMobile ? '1.6' : '1.8',
                     color: '#374151'
                   }}>
                     {paragraph}
@@ -569,12 +599,14 @@ function Article() {
             {/* Author Actions */}
             {currentUser?.username === currentArticle.username && (
               <div style={{
-                background: 'white',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-                border: '1px solid #e5e7eb',
-                marginBottom: '1.5rem'
+                background: isMobile ? 'transparent' : 'white',
+                borderRadius: isMobile ? '0' : '12px',
+                padding: isMobile ? '1rem 0.5rem' : '1.5rem',
+                boxShadow: isMobile ? 'none' : '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+                border: isMobile ? 'none' : '1px solid #e5e7eb',
+                marginBottom: '1.5rem',
+                borderTop: isMobile ? '1px solid #e5e7eb' : 'none',
+                borderBottom: isMobile ? '1px solid #e5e7eb' : 'none'
               }}>
                 <h5 style={{
                   marginBottom: '1rem',
@@ -677,11 +709,12 @@ function Article() {
 
             {/* Comments Section */}
             <div style={{
-              background: 'white',
-              borderRadius: '12px',
-              padding: '1.5rem',
-              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-              border: '1px solid #e5e7eb'
+              background: isMobile ? 'transparent' : 'white',
+              borderRadius: isMobile ? '0' : '12px',
+              padding: isMobile ? '1rem 0.5rem' : '1.5rem',
+              boxShadow: isMobile ? 'none' : '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+              border: isMobile ? 'none' : '1px solid #e5e7eb',
+              borderTop: isMobile ? '1px solid #e5e7eb' : (isMobile ? 'none' : '1px solid #e5e7eb')
             }}>
               <div style={{
                 display: 'flex',
@@ -743,11 +776,13 @@ function Article() {
               {/* Comment Form */}
               {currentUser && currentUser.userType === "user" && (
                 <div style={{
-                  background: '#f9fafb',
-                  padding: '1.5rem',
-                  borderRadius: '12px',
+                  background: isMobile ? 'transparent' : '#f9fafb',
+                  padding: isMobile ? '1rem 0' : '1.5rem',
+                  borderRadius: isMobile ? '0' : '12px',
                   marginBottom: '1.5rem',
-                  border: '1px solid #e5e7eb'
+                  border: isMobile ? 'none' : '1px solid #e5e7eb',
+                  borderTop: isMobile ? '1px solid #e5e7eb' : (isMobile ? 'none' : '1px solid #e5e7eb'),
+                  borderBottom: isMobile ? '1px solid #e5e7eb' : (isMobile ? 'none' : '1px solid #e5e7eb')
                 }}>
                   <h5 style={{
                     marginBottom: '1rem',
@@ -855,11 +890,12 @@ function Article() {
                 ) : (
                   enrichedComments.map((commentObj, index) => (
                     <div key={index} style={{
-                      background: '#f9fafb',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '12px',
-                      padding: '1.25rem',
-                      marginBottom: '1rem'
+                      background: isMobile ? 'transparent' : '#f9fafb',
+                      border: isMobile ? 'none' : '1px solid #e5e7eb',
+                      borderRadius: isMobile ? '0' : '12px',
+                      padding: isMobile ? '1rem 0' : '1.25rem',
+                      marginBottom: '1rem',
+                      borderBottom: isMobile ? '1px solid #e5e7eb' : 'none'
                     }}>
                       <div style={{
                         display: 'flex',

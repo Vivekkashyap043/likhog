@@ -29,7 +29,8 @@ const transporter = nodemailer.createTransport({
 
 // Send verification email function
 const sendVerificationEmail = async (email, fullName, userType, verificationToken) => {
-    const verificationUrl = `http://localhost:3000/verify-email?token=${verificationToken}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'https://likhog.onrender.com';
+    const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
     
     const mailOptions = {
         from: process.env.EMAIL_USER,
