@@ -70,7 +70,7 @@ Before running this project, make sure you have:
 
 ```bash
 git clone https://github.com/Vivekkashyap043/likhog.git
-cd blog-app
+cd likhog
 ```
 
 ### 2. Backend Setup
