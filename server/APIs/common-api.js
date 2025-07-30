@@ -129,7 +129,8 @@ const sendVerificationEmail = async (email, fullName, userType, verificationToke
 
 // Send password reset email
 const sendPasswordResetEmail = async (email, fullName, userType, resetToken) => {
-    const resetUrl = `https://likhog.onrender.com/reset-password?token=${resetToken}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'https://likhog.onrender.com';
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
     
     const mailOptions = {
         from: process.env.EMAIL_USER,
