@@ -2,6 +2,8 @@
 
 A full-stack blog application built with React.js frontend and Node.js backend, featuring user authentication, article management, and email verification.
 
+🌐 **Live Demo**: [https://likhog.onrender.com](https://likhog.onrender.com)
+
 ## 🌟 Features
 
 - **User Authentication**: Secure registration and login with JWT tokens
