@@ -343,11 +343,11 @@ This project is licensed under the ISC License. See the LICENSE file for details
 
 **Vivek Kashyap**
 - GitHub: [@Vivekkashyap043](https://github.com/Vivekkashyap043)
-- Email: [your-email@example.com]
+- Email: vivekkashyap043@gmail.com
 
 ## 📞 Support
 
-For support, email [your-email@example.com] or create an issue in the GitHub repository.
+For support, email vivekkashyap043@gmail.com or create an issue in the GitHub repository.
 
 ## 🎯 Future Enhancements
 
