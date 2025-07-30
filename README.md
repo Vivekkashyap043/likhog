@@ -271,7 +271,7 @@ npm start
 
 ## 🚀 Deployment
 
-### Frontend Deployment (Netlify/Vercel)
+### Frontend Deployment (Netlify/Vercel/Render)
 
 1. Build the project:
 ```bash
@@ -281,7 +281,14 @@ npm run build
 
 2. Deploy the `build` folder to your hosting service
 
-3. Update API base URL in `src/config/api.js` to your production server URL
+3. **Important**: Configure your hosting service for SPA routing:
+   - **Render**: Use the included `_redirects` file or `render.yaml` configuration
+   - **Netlify**: Use the included `netlify.toml` or `_redirects` file
+   - **Vercel**: Add a `vercel.json` with rewrites configuration
+   
+4. Update API base URL in `src/config/api.js` to your production server URL
+
+**Note**: Single Page Applications require server configuration to handle client-side routing. The included configuration files ensure that routes like `/reset-password` and `/verify-email` work correctly in production.
 
 ### Backend Deployment (Render/Heroku)
 
