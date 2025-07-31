@@ -23,17 +23,30 @@ A full-stack blog application built with React.js frontend and Node.js backend, 
 likhog/
 ├── client/                 # React.js frontend
 │   ├── public/
+│   │   ├── _redirects      # Hosting service SPA routing config
+│   │   ├── .htaccess       # Apache server config (backup)
+│   │   └── index.html      # Main HTML file
 │   ├── src/
 │   │   ├── components/     # React components
+│   │   │   ├── reset-password/     # Password reset component
+│   │   │   ├── email-verification/ # Email verification component
+│   │   │   └── ...         # Other components
 │   │   ├── redux/          # Redux store and slices
 │   │   ├── config/         # API configuration
 │   │   └── assets/         # Images and static files
-│   └── package.json
+│   ├── express-server.js   # Production Express server for SPA routing
+│   ├── render.yaml         # Render deployment configuration
+│   ├── netlify.toml        # Netlify deployment configuration
+│   ├── vercel.json         # Vercel deployment configuration
+│   └── package.json        # Frontend dependencies and scripts
 ├── server/                 # Node.js backend
 │   ├── APIs/               # API route handlers
+│   │   ├── user-api.js     # User authentication and data
+│   │   ├── author-api.js   # Author-specific endpoints
+│   │   └── common-api.js   # Email verification and password reset
 │   ├── Middlewares/        # Custom middleware
 │   ├── server.js           # Main server file
-│   └── package.json
+│   └── package.json        # Backend dependencies
 └── README.md
 ```
 
@@ -271,34 +284,121 @@ npm start
 
 ## 🚀 Deployment
 
-### Frontend Deployment (Netlify/Vercel/Render)
+### Frontend Deployment
 
-1. Build the project:
+This application includes an Express server configuration to handle SPA (Single Page Application) routing in production, ensuring that routes like `/reset-password` and `/verify-email` work correctly when accessed directly.
+
+#### Option 1: Render Deployment (Recommended)
+
+**Step 1: Prepare for Deployment**
 ```bash
-cd client
-npm run build
+# Ensure all changes are committed
+git add .
+git commit -m "Deploy with Express server for SPA routing"
+git push origin main
 ```
 
-2. Deploy the `build` folder to your hosting service
+**Step 2: Configure Render Service**
 
-3. **Important**: Configure your hosting service for SPA routing:
-   - **Render**: Use the included `_redirects` file or `render.yaml` configuration
-   - **Netlify**: Use the included `netlify.toml` or `_redirects` file
-   - **Vercel**: Add a `vercel.json` with rewrites configuration
-   
-4. Update API base URL in `src/config/api.js` to your production server URL
+1. Go to [Render Dashboard](https://dashboard.render.com)
+2. Click on your frontend service or create a new "Web Service"
+3. Connect your GitHub repository (`your-username/likhog`)
+4. Configure the service settings:
 
-**Note**: Single Page Applications require server configuration to handle client-side routing. The included configuration files ensure that routes like `/reset-password` and `/verify-email` work correctly in production.
+```yaml
+Name: likhog-frontend
+Environment: Web Service
+Region: Your preferred region
+Branch: main
+Root Directory: client
+Runtime: Node
+Build Command: npm install && npm run build
+Start Command: node express-server.js
+```
+
+**Step 3: Set Environment Variables**
+```env
+NODE_ENV=production
+```
+
+**Step 4: Deploy**
+- Click "Create Web Service" or "Manual Deploy"
+- Wait for build completion
+- Test the deployment URLs
+
+#### Option 2: Alternative Static Site Deployment
+
+If you prefer static site deployment, use the included configuration files:
+
+**For Render:**
+- Use the `_redirects` file in `client/public/`
+- Configure rewrite rules in Render dashboard: `/* → /index.html (200)`
+
+**For Netlify:**
+- Use the included `netlify.toml` or `_redirects` file
+- Netlify automatically handles SPA routing with these files
+
+**For Vercel:**
+- Use the included `vercel.json` configuration
+- Deploy from the `client` directory
+
+#### Express Server Benefits
+
+The included Express server (`client/express-server.js`) provides:
+- ✅ Reliable SPA routing in production
+- ✅ Proper handling of direct URL access
+- ✅ Fallback to `index.html` for all non-API routes
+- ✅ Static file serving for assets
+- ✅ Production-ready configuration
+
+#### Build and Deploy Commands
+
+```bash
+# Build the React application
+cd client
+npm install
+npm run build
+
+# Test the Express server locally (optional)
+npm run serve
+
+# The build folder will be served by express-server.js in production
+```
 
 ### Backend Deployment (Render/Heroku)
 
-1. Set environment variables in your hosting platform
-2. Ensure `package.json` has the correct start script
-3. Deploy the server directory
+1. **Set environment variables** in your hosting platform:
+```env
+DB_URL=your_mongodb_connection_string
+SECRET_KEY=your_jwt_secret_key
+EMAIL_USER=your_gmail_address
+EMAIL_PASSWORD=your_gmail_app_password
+FRONTEND_URL=https://your-frontend-url.onrender.com
+PORT=4000
+```
+
+2. **Configure deployment settings**:
+```yaml
+Build Command: npm install
+Start Command: npm start
+Root Directory: server
+Environment: Node
+```
+
+3. **Deploy the server directory**
 
 ### Production URLs
 - Frontend: `https://likhog.onrender.com`
 - Backend: `https://likhog-server.onrender.com`
+
+### Post-Deployment Verification
+
+After deployment, test these critical routes:
+- ✅ `https://your-app.onrender.com/` - Home page
+- ✅ `https://your-app.onrender.com/reset-password?token=...` - Password reset
+- ✅ `https://your-app.onrender.com/verify-email?token=...` - Email verification
+- ✅ `https://your-app.onrender.com/login` - Login page
+- ✅ All other React Router routes
 
 ## 🧪 Testing
 
@@ -335,6 +435,33 @@ npm test
 4. **JWT Token Issues**
    - Ensure SECRET_KEY is set in environment
    - Check token expiration settings
+
+5. **SPA Routing Issues (404 Not Found on Direct URL Access)**
+   - **Problem**: Routes like `/reset-password` or `/verify-email` show "Not Found" when accessed directly
+   - **Cause**: Production server doesn't handle client-side routing
+   - **Solution**: Use the Express server approach (recommended):
+     ```bash
+     # Ensure express-server.js is in client directory
+     # Update Render service to Web Service (not Static Site)
+     # Build Command: npm install && npm run build
+     # Start Command: node express-server.js
+     ```
+   - **Alternative**: Configure hosting service redirects:
+     - **Render**: Add rewrite rule `/* → /index.html (200)`
+     - **Netlify**: Use `_redirects` file
+     - **Vercel**: Use `vercel.json` configuration
+
+6. **Email Links Not Working**
+   - Check that FRONTEND_URL environment variable is set correctly
+   - Verify email templates are generating correct URLs
+   - Ensure SPA routing is properly configured (see issue #5)
+   - Test email links after deployment completion
+
+7. **Build/Deployment Failures**
+   - Check build logs in hosting platform
+   - Verify all dependencies are listed in package.json
+   - Ensure build command includes all necessary steps
+   - Check for environment-specific issues (Node.js version, npm/yarn differences)
 
 ## 🤝 Contributing
 
