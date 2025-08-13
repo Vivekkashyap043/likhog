@@ -8,7 +8,7 @@ const cors = require('cors')
 
 app.use(cors())
 //to parse the body of req
-app.use(exp.json())
+app.use(express.json())
 
 //connect to DB
 mongoClient.connect(process.env.DB_URL)
