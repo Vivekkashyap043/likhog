@@ -1,6 +1,6 @@
 //create express app
-const exp=require('express');
-const app=exp()
+const express = require('express');
+const app = express();
 require('dotenv').config() 
 const mongoClient=require('mongodb').MongoClient;
 const path=require('path')
