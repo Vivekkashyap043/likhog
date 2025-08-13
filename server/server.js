@@ -3,7 +3,7 @@ const exp=require('express');
 const app=exp()
 require('dotenv').config() 
 const mongoClient=require('mongodb').MongoClient;
-//const path=require('path')
+const path=require('path')
 const cors = require('cors')
 
 app.use(cors())
@@ -28,6 +28,8 @@ mongoClient.connect(process.env.DB_URL)
 })
 .catch(err=>console.log("Error in Database connection", err))
 
+// Serve static files from React build
+app.use(express.static(path.join(__dirname, '../client/build')));
 
 //import API routes
 const userApp=require('./APIs/user-api')
@@ -48,6 +50,11 @@ app.use('/common-api',commonApp)
 app.use((err,req,res,next)=>{
     res.send({message:"error",payload:err.message})
 })
+// SPA Fallback: serve index.html for any unknown route
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+});
+
 //assign port number
 const port=process.env.PORT || 4000;
 app.listen(port,()=>console.log(`Server is running on port ${port}`))
