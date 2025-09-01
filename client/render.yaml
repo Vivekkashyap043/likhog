@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: likhog-frontend
-    env: node
-    buildCommand: npm install && npm run build
-    startCommand: node express-server.js
-    envVars:
-      - key: NODE_ENV
-        value: production

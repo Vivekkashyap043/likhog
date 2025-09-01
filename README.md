@@ -288,68 +288,38 @@ npm start
 
 This application includes an Express server configuration to handle SPA (Single Page Application) routing in production, ensuring that routes like `/reset-password` and `/verify-email` work correctly when accessed directly.
 
-#### Option 1: Render Deployment (Recommended)
 
-**Step 1: Prepare for Deployment**
-```bash
-# Ensure all changes are committed
-git add .
-git commit -m "Deploy with Express server for SPA routing"
-git push origin main
-```
 
-**Step 2: Configure Render Service**
+### Deployment
 
-1. Go to [Render Dashboard](https://dashboard.render.com)
-2. Click on your frontend service or create a new "Web Service"
-3. Connect your GitHub repository (`your-username/likhog`)
-4. Configure the service settings:
+#### Manual Deployment (Recommended)
 
-```yaml
-Name: likhog-frontend
-Environment: Web Service
-Region: Your preferred region
-Branch: main
-Root Directory: client
-Runtime: Node
-Build Command: npm install && npm run build
-Start Command: node express-server.js
-```
+1. Build the client app:
+  ```powershell
+  cd client
+  npm install
+  npm run build
+  ```
 
-**Step 3: Set Environment Variables**
-```env
-NODE_ENV=production
-```
+2. Ensure the build output (`client/build`) is available and will be served by the server.
 
-**Step 4: Deploy**
-- Click "Create Web Service" or "Manual Deploy"
-- Wait for build completion
-- Test the deployment URLs
+3. Start the server:
+  ```powershell
+  cd ../server
+  npm install
+  node server.js
+  ```
 
-#### Option 2: Alternative Static Site Deployment
+4. The server should be configured to serve static files from the `client/build` directory. (Check `express-server.js` or `server.js` for static file serving logic.)
 
-If you prefer static site deployment, use the included configuration files:
+5. Deploy the server (with the client build included) to your chosen platform (e.g., Render, Heroku, AWS, etc.).
 
-**For Render:**
-- Use the `_redirects` file in `client/public/`
-- Configure rewrite rules in Render dashboard: `/* → /index.html (200)`
+6. Make sure environment variables are set as required (see `.env.example`).
 
-**For Netlify:**
-- Use the included `netlify.toml` or `_redirects` file
-- Netlify automatically handles SPA routing with these files
+---
 
-**For Vercel:**
-- Use the included `vercel.json` configuration
-- Deploy from the `client` directory
+**Note:** Remove any references to `render.yaml`, `netlify.toml`, or `vercel.json` as these are not required for manual deployment. If using a platform-specific configuration, refer to that platform's documentation.
 
-#### Express Server Benefits
-
-The included Express server (`client/express-server.js`) provides:
-- ✅ Reliable SPA routing in production
-- ✅ Proper handling of direct URL access
-- ✅ Fallback to `index.html` for all non-API routes
-- ✅ Static file serving for assets
-- ✅ Production-ready configuration
 
 #### Build and Deploy Commands
 
