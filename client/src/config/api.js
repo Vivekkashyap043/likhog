@@ -3,7 +3,7 @@
 
 // Base URL for the API server
 //export const API_BASE_URL = 'https://likhog-server.onrender.com';
-export const API_BASE_URL = 'http://localhost:4000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 // API endpoints organized by service
 export const API_ENDPOINTS = {
   // Common endpoints
