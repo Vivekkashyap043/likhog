@@ -12,30 +12,131 @@ Welcome to LikhoG. This README explains the architecture, important flows (regis
 - Quick start (frontend & backend)
 - Email testing
 - Troubleshooting
-Author: Vivek Kashyap — contact: vivekkashyap043@gmail.com
- 2. Client sends request to backend; backend returns 201 quickly.
- 3. Client navigates to `/verify-email-sent` giving instructions to check email.
- 4. User clicks verification link in email (or copy/pastes into browser). Frontend verifies token and then shows success/error.
 
- ---
+## Troubleshooting
 
- ## Environment variables (what you must set)
+Short, actionable fixes for common problems.
 
- Create a `.env` file in `server/` with at least these variables:
+- Port already in use (EADDRINUSE)
 
- Required (backend):
- - DB_URL — MongoDB connection string (e.g., `mongodb://localhost:27017/blogdb` or Atlas URI)
- - SECRET_KEY — strong JWT secret
- - EMAIL_USER — SMTP username (email address)
- - EMAIL_PASS or EMAIL_PASSWORD — SMTP password (for Gmail use App Password)
- - FRONTEND_URL — where the frontend runs (e.g., `http://localhost:3000`)
+  1. Find the process using the port:
 
- Optional/alternate SMTP env names supported by the server code:
- - EMAIL_HOST or SMTP_HOST — SMTP server host (e.g., `smtp.gmail.com`)
- - EMAIL_PORT or SMTP_PORT — SMTP port (e.g., 587)
- - EMAIL_SECURE — 'true' or 'false' (use true for port 465)
+     ```powershell
+     netstat -ano | findstr :4000
+     ```
 
- Client-side (optional):
+  2. Kill the process (replace <PID> with the number from netstat):
+
+     ```powershell
+     taskkill /PID <PID> /F
+     ```
+
+  3. Or start the server on a temporary port:
+
+     ```powershell
+     $env:PORT=5000; node server.js
+     ```
+
+- SMTP / email problems
+
+  - Look at the server console for `transporter.verify()` output. Common messages and fixes:
+    - Authentication errors (EAUTH/535): wrong username/password — for Gmail use an App Password.
+    - ENOTFOUND: wrong SMTP host.
+    - TLS/ECONNECTION: wrong port/secure setting — try port 587 with secure=false or port 465 with secure=true.
+  - For local development use Mailtrap or Ethereal to avoid real delivery issues.
+
+- Messages accepted by SMTP but not received
+
+  - Provider may classify messages as spam or drop them. For production use SendGrid/Mailgun/Postmark and set SPF/DKIM records.
+
+If you paste the server logs here I will parse them and give exact fixes.
+
+## FAQ (quick answers)
+
+Q: I click "Create Account" and the spinner never stops. What do I do?
+
+- A: Two quick checks:
+  1) Is the backend running and reachable? Confirm `node server.js` is running and the port matches `REACT_APP_API_BASE_URL` in `client/.env`.
+  2) Did the server log an error? Check server console — if email sending previously blocked the request you should now see the registration succeeded (server responds immediately) and the email is sent asynchronously.
+
+Q: I never receive verification emails. How can I debug?
+
+- A: Inspect server logs for transporter verification and send errors. Typical steps:
+  1) Ensure SMTP env vars are correct (or use Mailtrap/Ethereal).
+  2) Check server startup logs for `transporter.verify()` output.
+  3) On successful send you should see `messageId` or an Ethereal preview URL in logs.
+
+Q: How can I change the API URL during development?
+
+- A: Create `client/.env` with `REACT_APP_API_BASE_URL=http://localhost:5000` (or the port your server uses) and restart the client.
+
+Q: Can I make registration fail if email cannot be sent?
+
+- A: Currently registration responds immediately and emails are sent in background to avoid UI hangs. If you need synchronous behavior I can add an env toggle (e.g., `WAIT_FOR_EMAIL=true`) to make the server wait for sendMail before responding.
+
+## Database schema (collections)
+
+Below are the main MongoDB collections and their commonly used fields. Fields marked (required) are added/expected by the server code; others are commonly used by the frontend.
+
+### `users` (collection name in code: `userscollection`)
+
+| Field | Type | Notes |
+|---|---:|---|
+| `_id` | ObjectId | MongoDB id |
+| `username` | string | Unique username (auto-generated from email) |
+| `fullName` | string | User's display name (required at registration) |
+| `email` | string | Unique email (required) |
+| `password` | string | Hashed password (bcrypt) |
+| `isEmailVerified` | boolean | false until user verifies |
+| `emailVerifiedAt` | Date  null | Timestamp when verification happened |
+| `createdAt` | Date | Account creation time |
+
+### `authors` (collection name in code: `authorscollection`)
+
+| Field | Type | Notes |
+|---|---:|---|
+| `_id` | ObjectId | MongoDB id |
+| `username` | string | Unique username (auto-generated from email) |
+| `fullName` | string | Author's display name |
+| `email` | string | Unique email |
+| `password` | string | Hashed password (bcrypt) |
+| `isEmailVerified` | boolean | false until verified |
+| `emailVerifiedAt` | Date  null | Timestamp when verification happened |
+| `createdAt` | Date | Account creation time |
+
+### `articles` (collection name in code: `articlescollection`)
+
+| Field | Type | Notes |
+|---|---:|---|
+| `_id` | ObjectId | MongoDB id |
+| `articleId` | number | App-level numeric id (client sets Date.now()) |
+| `title` | string | Article title |
+| `content` | string | Article body/html/text |
+| `username` | string | Author username (foreign key) |
+| `authorFullName` | string | Denormalized author name for quick render |
+| `category` | string | Article category/tag |
+| `dateOfCreation` | Date | Creation timestamp (client sets) |
+| `dateOfModification` | Date | Last modification timestamp (client sets) |
+| `status` | boolean | true = published, false = soft-deleted/draft |
+| `views` | number | View count |
+| `viewsedUsers` | array | (typo in code: actually `viewedUsers`) usernames who viewed |
+| `likes` | number | Likes count |
+| `likedUsers` | array | usernames who liked the article (for toggle behavior) |
+| `comments` | array | Embedded comment objects (see below) |
+
+### Comment object (embedded inside `articles.comments`)
+
+| Field | Type | Notes |
+|---|---:|---|
+| `username` | string | Commenter's username |
+| `fullName` | string | Commenter's display name |
+| `text` | string | The comment body |
+| `createdAt` | Date | When comment was posted |
+
+Notes:
+
+- The application embeds comments inside articles for simplicity. Likes/views are stored as counts plus `likedUsers`/`viewedUsers` arrays so the server can toggle/limit actions per user.
+- If you prefer normalized schemas (separate `comments` collection) we can migrate to that later; current approach optimizes for simple reads of article + comments.
  - Create `client/.env` with `REACT_APP_API_BASE_URL=http://localhost:5000` if your server runs on 5000.
 
  Security note: never commit `.env` with credentials to source control. Use the `.env.example` as a template.
