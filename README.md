@@ -257,14 +257,18 @@ Notes:
  ## Troubleshooting & FAQ
 
  Q: I click "Create Account" and the spinner never stops.
+ 
  A: Two likely causes:
    1. Your backend didn't respond (port conflict or server not running) — check server console and ensure server is running and reachable from client.
    2. SMTP sending was blocking earlier; we changed registration to respond immediately and send email asynchronously. If you still see hangs, check server logs printed to console.
 
+ 
  Q: I never receive verification emails.
+ 
  A: Check server logs for transporter.verify errors or send errors. Confirm EMAIL_USER and EMAIL_PASS are correct (App Password for Gmail). Consider using a transactional email provider.
 
  Q: How do I change API URL while developing?
+ 
  A: Create `client/.env` with `REACT_APP_API_BASE_URL=http://localhost:5000` and restart the client.
 
  ---
