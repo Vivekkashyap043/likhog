@@ -1,468 +1,184 @@
-# LikhoG - Blog Application
-
-A full-stack blog application built with React.js frontend and Node.js backend, featuring user authentication, article management, and email verification.
-
-🌐 **Live Demo**: [https://likhog.onrender.com](https://likhog.onrender.com)
-
-## 🌟 Features
-
-- **User Authentication**: Secure registration and login with JWT tokens
-- **Email Verification**: Account verification via email before login
-- **Article Management**: Create, read, update, and delete articles
-- **User Roles**: Separate interfaces for users and authors
-- **Comment System**: Users can comment on articles
-- **Like System**: Users can like/unlike articles
-- **View Tracking**: Track article views per user
-- **Responsive Design**: Mobile-first design with full responsive layout
-- **Password Reset**: Forgot password functionality with email recovery
-- **Real-time Updates**: Dynamic content updates without page refresh
-
-## 🏗️ Project Structure
-
-```
-likhog/
-├── client/                 # React.js frontend
-│   ├── public/
-│   │   ├── _redirects      # Hosting service SPA routing config
-│   │   ├── .htaccess       # Apache server config (backup)
-│   │   └── index.html      # Main HTML file
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   │   ├── reset-password/     # Password reset component
-│   │   │   ├── email-verification/ # Email verification component
-│   │   │   └── ...         # Other components
-│   │   ├── redux/          # Redux store and slices
-│   │   ├── config/         # API configuration
-│   │   └── assets/         # Images and static files
-│   ├── express-server.js   # Production Express server for SPA routing
-│   ├── render.yaml         # Render deployment configuration
-│   ├── netlify.toml        # Netlify deployment configuration
-│   ├── vercel.json         # Vercel deployment configuration
-│   └── package.json        # Frontend dependencies and scripts
-├── server/                 # Node.js backend
-│   ├── APIs/               # API route handlers
-│   │   ├── user-api.js     # User authentication and data
-│   │   ├── author-api.js   # Author-specific endpoints
-│   │   └── common-api.js   # Email verification and password reset
-│   ├── Middlewares/        # Custom middleware
-│   ├── server.js           # Main server file
-│   └── package.json        # Backend dependencies
-└── README.md
-```
-
-## 🚀 Tech Stack
-
-### Frontend
-- **React.js** - UI library
-- **React Router** - Navigation
-- **Redux Toolkit** - State management
-- **Bootstrap** - CSS framework
-- **Axios** - HTTP client
-- **React Hook Form** - Form handling
-- **React Icons** - Icon library
-
-### Backend
-- **Node.js** - Runtime environment
-- **Express.js** - Web framework
-- **MongoDB** - Database
-- **JWT** - Authentication
-- **bcryptjs** - Password hashing
-- **Nodemailer** - Email service
-- **CORS** - Cross-origin requests
-
-## 📋 Prerequisites
-
-Before running this project, make sure you have:
-
-- **Node.js** (v14 or higher)
-- **npm** or **yarn**
-- **MongoDB** (local installation or MongoDB Atlas account)
-- **Gmail account** (for email functionality)
-
-## 🛠️ Installation & Setup
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/Vivekkashyap043/likhog.git
-cd likhog
-```
-
-### 2. Backend Setup
-
-#### Navigate to server directory
-```bash
-cd server
-```
-
-#### Install dependencies
-```bash
-npm install
-```
-
-#### Create environment file
-Create a `.env` file in the server directory with the following variables:
-
-```env
-# Database Configuration
-DB_URL=mongodb://localhost:27017/blogdb
-# For MongoDB Atlas: mongodb+srv://username:password@cluster.mongodb.net/blogdb
-
-# JWT Secret Key (use a strong, random string)
-SECRET_KEY=your_super_secret_jwt_key_here
-
-# Email Configuration (Gmail)
-EMAIL_USER=your-email@gmail.com
-EMAIL_PASSWORD=your-gmail-app-password
-
-# Frontend URL (for email links)
-FRONTEND_URL=http://localhost:3000
-
-# Server Port (optional, defaults to 4000)
-PORT=4000
-```
-
-#### Gmail App Password Setup
-1. Enable 2-factor authentication on your Gmail account
-2. Go to Google Account settings > Security > App passwords
-3. Generate an app password for "Mail"
-4. Use this app password in the `EMAIL_PASSWORD` field
-
-### 3. Frontend Setup
-
-#### Navigate to client directory (from root)
-```bash
-cd client
-```
-
-#### Install dependencies
-```bash
-npm install
-```
-
-#### Update API Configuration (if needed)
-The API base URL is configured in `src/config/api.js`. For local development, update if necessary:
-
-```javascript
-export const API_BASE_URL = 'http://localhost:4000';
-```
-
-## 🏃‍♂️ Running the Application
-
-### Development Mode
-
-#### Start the Backend Server
-```bash
-# From the server directory
-cd server
-npm run dev
-# or
-npm start
-```
-The server will run on `http://localhost:4000`
-
-#### Start the Frontend Application
-```bash
-# From the client directory (new terminal)
-cd client
-npm start
-```
-The frontend will run on `http://localhost:3000`
-
-### Production Mode
-
-#### Build the Frontend
-```bash
-cd client
-npm run build
-```
-
-#### Start the Production Server
-```bash
-cd server
-npm start
-```
-
-## 🔧 Environment Variables
-
-### Required Environment Variables
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `DB_URL` | MongoDB connection string | `mongodb://localhost:27017/blogdb` |
-| `SECRET_KEY` | JWT secret key | `your_secret_key_here` |
-| `EMAIL_USER` | Gmail email address | `your-email@gmail.com` |
-| `EMAIL_PASSWORD` | Gmail app password | `your_app_password` |
-
-### Optional Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `FRONTEND_URL` | Frontend URL for emails | `http://localhost:3000` |
-| `PORT` | Server port | `4000` |
-
-## 📚 API Endpoints
-
-### User Endpoints
-- `POST /user-api/user` - User registration
-- `POST /user-api/login` - User login
-- `GET /user-api/articles` - Get all articles
-- `POST /user-api/comment/:articleId` - Add comment
-- `POST /user-api/like/:articleId` - Like/unlike article
-- `POST /user-api/view/:articleId` - Track article view
-- `GET /user-api/user-details/:username` - Get user details
-
-### Author Endpoints
-- `POST /author-api/author` - Author registration
-- `POST /author-api/login` - Author login
-- `POST /author-api/article` - Create article
-- `PUT /author-api/article` - Update article
-- `DELETE /author-api/article/:id` - Delete article
-- `PUT /author-api/article/:id` - Restore article
-
-### Common Endpoints
-- `POST /common-api/send-verification` - Send verification email
-- `POST /common-api/verify-email` - Verify email
-- `POST /common-api/forgot-password` - Request password reset
-- `POST /common-api/reset-password` - Reset password
-
-## 🗄️ Database Schema
-
-### Users Collection
-```javascript
-{
-  _id: ObjectId,
-  fullName: String,
-  email: String,
-  username: String,
-  password: String (hashed),
-  isEmailVerified: Boolean,
-  emailVerifiedAt: Date,
-  createdAt: Date
-}
-```
-
-### Authors Collection
-```javascript
-{
-  _id: ObjectId,
-  fullName: String,
-  email: String,
-  username: String,
-  password: String (hashed),
-  isEmailVerified: Boolean,
-  emailVerifiedAt: Date,
-  createdAt: Date
-}
-```
-
-### Articles Collection
-```javascript
-{
-  _id: ObjectId,
-  articleId: Number,
-  title: String,
-  content: String,
-  username: String,
-  category: String,
-  status: Boolean,
-  likes: Number,
-  views: Number,
-  likedUsers: [String],
-  viewedUsers: [String],
-  comments: [
-    {
-      comment: String,
-      username: String,
-      dateOfComment: Date
-    }
-  ],
-  dateOfCreation: Date,
-  dateOfModification: Date
-}
-```
-
-## 🚀 Deployment
-
-### Frontend Deployment
-
-This application includes an Express server configuration to handle SPA (Single Page Application) routing in production, ensuring that routes like `/reset-password` and `/verify-email` work correctly when accessed directly.
-
-
-
-### Deployment
-
-#### Manual Deployment (Recommended)
-
-1. Build the client app:
-  ```powershell
-  cd client
-  npm install
-  npm run build
-  ```
-
-2. Ensure the build output (`client/build`) is available and will be served by the server.
-
-3. Start the server:
-  ```powershell
-  cd ../server
-  npm install
-  node server.js
-  ```
-
-4. The server should be configured to serve static files from the `client/build` directory. (Check `express-server.js` or `server.js` for static file serving logic.)
-
-5. Deploy the server (with the client build included) to your chosen platform (e.g., Render, Heroku, AWS, etc.).
-
-6. Make sure environment variables are set as required (see `.env.example`).
-
----
-
-**Note:** Remove any references to `render.yaml`, `netlify.toml`, or `vercel.json` as these are not required for manual deployment. If using a platform-specific configuration, refer to that platform's documentation.
-
-
-#### Build and Deploy Commands
-
-```bash
-# Build the React application
-cd client
-npm install
-npm run build
-
-# Test the Express server locally (optional)
-npm run serve
-
-# The build folder will be served by express-server.js in production
-```
-
-### Backend Deployment (Render/Heroku)
-
-1. **Set environment variables** in your hosting platform:
-```env
-DB_URL=your_mongodb_connection_string
-SECRET_KEY=your_jwt_secret_key
-EMAIL_USER=your_gmail_address
-EMAIL_PASSWORD=your_gmail_app_password
-FRONTEND_URL=https://your-frontend-url.onrender.com
-PORT=4000
-```
-
-2. **Configure deployment settings**:
-```yaml
-Build Command: npm install
-Start Command: npm start
-Root Directory: server
-Environment: Node
-```
-
-3. **Deploy the server directory**
-
-### Production URLs
-- Frontend: `https://likhog.onrender.com`
-- Backend: `https://likhog-server.onrender.com`
-
-### Post-Deployment Verification
-
-After deployment, test these critical routes:
-- ✅ `https://your-app.onrender.com/` - Home page
-- ✅ `https://your-app.onrender.com/reset-password?token=...` - Password reset
-- ✅ `https://your-app.onrender.com/verify-email?token=...` - Email verification
-- ✅ `https://your-app.onrender.com/login` - Login page
-- ✅ All other React Router routes
-
-## 🧪 Testing
-
-### Run Frontend Tests
-```bash
-cd client
-npm test
-```
-
-### Run Backend Tests
-```bash
-cd server
-npm test
-```
-
-## 🔍 Troubleshooting
-
-### Common Issues
-
-1. **Database Connection Error**
-   - Check if MongoDB is running locally
-   - Verify DB_URL in environment variables
-   - Ensure network access for MongoDB Atlas
-
-2. **Email Not Sending**
-   - Verify Gmail app password is correct
-   - Check if 2FA is enabled on Gmail
-   - Ensure EMAIL_USER and EMAIL_PASSWORD are set
-
-3. **CORS Errors**
-   - Verify API base URL in frontend configuration
-   - Check server CORS settings
-
-4. **JWT Token Issues**
-   - Ensure SECRET_KEY is set in environment
-   - Check token expiration settings
-
-5. **SPA Routing Issues (404 Not Found on Direct URL Access)**
-   - **Problem**: Routes like `/reset-password` or `/verify-email` show "Not Found" when accessed directly
-   - **Cause**: Production server doesn't handle client-side routing
-   - **Solution**: Use the Express server approach (recommended):
-     ```bash
-     # Ensure express-server.js is in client directory
-     # Update Render service to Web Service (not Static Site)
-     # Build Command: npm install && npm run build
-     # Start Command: node express-server.js
-     ```
-   - **Alternative**: Configure hosting service redirects:
-     - **Render**: Add rewrite rule `/* → /index.html (200)`
-     - **Netlify**: Use `_redirects` file
-     - **Vercel**: Use `vercel.json` configuration
-
-6. **Email Links Not Working**
-   - Check that FRONTEND_URL environment variable is set correctly
-   - Verify email templates are generating correct URLs
-   - Ensure SPA routing is properly configured (see issue #5)
-   - Test email links after deployment completion
-
-7. **Build/Deployment Failures**
-   - Check build logs in hosting platform
-   - Verify all dependencies are listed in package.json
-   - Ensure build command includes all necessary steps
-   - Check for environment-specific issues (Node.js version, npm/yarn differences)
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 👨‍💻 Author
-
-**Vivek Kashyap**
-- GitHub: [@Vivekkashyap043](https://github.com/Vivekkashyap043)
-- Email: vivekkashyap043@gmail.com
-
-## 📞 Support
-
-For support, email vivekkashyap043@gmail.com or create an issue in the GitHub repository.
-
-## 🎯 Future Enhancements
-
-- [ ] Image upload for articles
-- [ ] Rich text editor for article creation
-- [ ] Social media integration
-- [ ] Advanced search functionality
-- [ ] User profile customization
-- [ ] Article categories and tags
-- [ ] Email notifications for new articles
-- [ ] Admin dashboard
-- [ ] Analytics and reporting
-
----
-
-⭐ **If you found this project helpful, please give it a star!** ⭐
+# LikhoG — Full-stack Blogging Platform
+
+Welcome to LikhoG. This README explains the architecture, important flows (registration → verification → login), technologies used, and step-by-step setup instructions for both frontend and backend. All commands below are PowerShell-ready.
+
+## Contents
+
+- Project overview
+- Flow summary
+- Tech stack
+- Repo layout
+- Environment variables
+- Quick start (frontend & backend)
+- Email testing
+- Troubleshooting
+Author: Vivek Kashyap — contact: vivekkashyap043@gmail.com
+ 2. Client sends request to backend; backend returns 201 quickly.
+ 3. Client navigates to `/verify-email-sent` giving instructions to check email.
+ 4. User clicks verification link in email (or copy/pastes into browser). Frontend verifies token and then shows success/error.
+
+ ---
+
+ ## Environment variables (what you must set)
+
+ Create a `.env` file in `server/` with at least these variables:
+
+ Required (backend):
+ - DB_URL — MongoDB connection string (e.g., `mongodb://localhost:27017/blogdb` or Atlas URI)
+ - SECRET_KEY — strong JWT secret
+ - EMAIL_USER — SMTP username (email address)
+ - EMAIL_PASS or EMAIL_PASSWORD — SMTP password (for Gmail use App Password)
+ - FRONTEND_URL — where the frontend runs (e.g., `http://localhost:3000`)
+
+ Optional/alternate SMTP env names supported by the server code:
+ - EMAIL_HOST or SMTP_HOST — SMTP server host (e.g., `smtp.gmail.com`)
+ - EMAIL_PORT or SMTP_PORT — SMTP port (e.g., 587)
+ - EMAIL_SECURE — 'true' or 'false' (use true for port 465)
+
+ Client-side (optional):
+ - Create `client/.env` with `REACT_APP_API_BASE_URL=http://localhost:5000` if your server runs on 5000.
+
+ Security note: never commit `.env` with credentials to source control. Use the `.env.example` as a template.
+
+ ---
+
+ ## Step-by-step setup (development)
+
+ Prerequisites
+ - Node.js (v16+ recommended)
+ - npm or yarn
+ - MongoDB (local or Atlas)
+
+ Backend (server)
+ 1. Open a terminal and go to the server folder:
+ ```powershell
+ cd D:\projects\blogging\likhog\server
+ npm install
+ ```
+ 2. Create `.env` using `server/.env.example` as reference. Example (local):
+ ```text
+ DB_URL=mongodb://localhost:27017/blogdb
+ SECRET_KEY=replace_with_a_random_secret
+ FRONTEND_URL=http://localhost:3000
+ EMAIL_HOST=smtp.gmail.com
+ EMAIL_PORT=587
+ EMAIL_USER=you@gmail.com
+ EMAIL_PASS=your_app_password_here
+ PORT=5000
+ ```
+ 3. Start the server:
+ ```powershell
+ node server.js
+ # or (with nodemon)
+ npx nodemon server.js
+ ```
+
+ Frontend (client)
+ 1. In a new terminal:
+ ```powershell
+ cd D:\projects\blogging\likhog\client
+ npm install
+ ```
+ 2. (Optional) Create `client/.env` with the API base URL for local development:
+ ```text
+ REACT_APP_API_BASE_URL=http://localhost:5000
+ ```
+ 3. Start the client:
+ ```powershell
+ npm start
+ ```
+ 4. Open `http://localhost:3000` in your browser.
+
+ ---
+
+ ## Running and testing
+
+ - Registration: create a new account; after submission you should be redirected to `/verify-email-sent` and see the email hint.
+ - Verification: click the email link to verify (or copy the verification URL printed in server logs for testing).
+ - Login: you cannot login until your account is verified. The server returns a 403 with a helpful message if not verified.
+
+ Automated tests: there are no comprehensive tests included by default. You can run `npm test` in `client/` if you added tests.
+
+ ---
+
+ ## Debugging email delivery — what to look for in the server console
+
+ I added robust logging into the email code so you can see exactly what is happening. When you start the server, check these lines:
+
+ - Server startup summary (sanitized env): shows whether DB_URL and EMAIL_USER are set.
+ - Transporter verification log: if SMTP config is invalid you'll see `Email configuration error:` with details.
+ - When sending verification emails you will see logs like:
+   - `Attempting to send verification email to <email>`
+   - `Verification link: <url>`
+   - On success: `Verification email sent: { messageId, accepted, rejected, response }`
+   - On error: `Error in sendVerificationEmail: <error message>` or the async send will log `Error sending verification email (async): <error message>`
+
+ Common problems and fixes
+ - Authentication/EAUTH/535 errors: usually wrong username/password. For Gmail, create an App Password and use it. Ensure 2FA is enabled then create App Password.
+ - ENOTFOUND: the SMTP host name is wrong.
+ - ECONNECTION/TLS errors: check `EMAIL_PORT` and `EMAIL_SECURE`. Port 587 with secure=false (STARTTLS) is common; port 465 requires secure=true.
+
+ If you paste the exact server error logs here I will parse them and give exact instructions.
+
+ ---
+
+ ## Deployment notes
+
+ - Build the React app with `npm run build` in `client/`.
+ - Copy the `client/build` folder alongside `server/` and ensure `server.js` serves static files from `../client/build` (already configured).
+ - On the hosting platform (Render, Heroku, AWS), configure the server service root to `server/` and set environment variables in the platform dashboard.
+
+ Recommended production SMTP providers (if you need reliable email delivery): SendGrid, Mailgun, Postmark, Amazon SES. They usually provide better deliverability than plain Gmail.
+
+ ---
+
+ ## API summary (quick reference)
+
+ - `POST /user-api/user` — Register a user (body: fullName, email, password, userType)
+ - `POST /user-api/login` — Login (body: email, password)
+ - `POST /author-api/author` — Register an author
+ - `POST /common-api/send-verification` — Send verification email (body: email, username, userType)
+ - `POST /common-api/verify-email` — Verify email (body: token)
+
+ For full list check the `server/APIs` folder.
+
+ ---
+
+ ## Database schema (short)
+
+ Users and Authors collections contain:
+ - fullName, email, username, password (hashed), isEmailVerified, emailVerifiedAt, createdAt
+
+ Articles collection stores: title, content, username (author), likes, views, comments array, status, timestamps.
+
+ ---
+
+ ## Troubleshooting & FAQ
+
+ Q: I click "Create Account" and the spinner never stops.
+ A: Two likely causes:
+   1. Your backend didn't respond (port conflict or server not running) — check server console and ensure server is running and reachable from client.
+   2. SMTP sending was blocking earlier; we changed registration to respond immediately and send email asynchronously. If you still see hangs, check server logs printed to console.
+
+ Q: I never receive verification emails.
+ A: Check server logs for transporter.verify errors or send errors. Confirm EMAIL_USER and EMAIL_PASS are correct (App Password for Gmail). Consider using a transactional email provider.
+
+ Q: How do I change API URL while developing?
+ A: Create `client/.env` with `REACT_APP_API_BASE_URL=http://localhost:5000` and restart the client.
+
+ ---
+
+ ## Next steps / improvements (ideas for future work)
+
+ - Add unit/integration tests for backend routes and email flows.
+ - Replace Nodemailer with a provider SDK (e.g., SendGrid) for improved deliverability and logging.
+ - Add file/image uploads and a rich-text editor for articles.
+ - Add rate-limiting and stronger security layers for production.
+
+ ---
+
+ If anything in this README is unclear or you want me to add screenshots or step-by-step walkthroughs (e.g., how to create a Gmail App Password), tell me which part and I'll expand it. Happy to add a short "quick start" script or docker-compose file if you want a one-command dev environment.
+
+ ---
+
+ Author: Vivek Kashyap — contact: vivekkashyap043@gmail.com

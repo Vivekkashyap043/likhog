@@ -17,64 +17,90 @@ userApp.use((req, res, next) => {
   next();
 });
 
-// Configure nodemailer transporter
-const transporter = nodemailer.createTransport({
+// Configure nodemailer transporter, accept multiple env var names for compatibility
+const emailHost = process.env.EMAIL_HOST || process.env.SMTP_HOST || process.env.EMAIL_SMTP_HOST;
+const emailPort = process.env.EMAIL_PORT || process.env.SMTP_PORT;
+const emailUser = process.env.EMAIL_USER || process.env.EMAIL_USERNAME;
+const emailPass = process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS || process.env.EMAIL_PASSWD;
+
+const transporterConfig = emailHost
+  ? {
+    host: emailHost,
+    port: emailPort ? Number(emailPort) : 587,
+    secure: String(process.env.EMAIL_SECURE || process.env.SMTP_SECURE || 'false') === 'true',
+    auth: {
+    user: emailUser,
+    pass: emailPass,
+    },
+  }
+  : {
     service: 'gmail',
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-    }
+    user: emailUser,
+    pass: emailPass,
+    },
+  };
+
+const transporter = nodemailer.createTransport(transporterConfig);
+
+transporter.verify((err, success) => {
+  if (err) {
+  console.error('User API email transporter configuration error:', err && err.message ? err.message : err);
+  console.error('Transporter config:', transporterConfig);
+  } else {
+  console.log('User API email transporter is ready to send messages');
+  }
 });
 
 // Send verification email function
 const sendVerificationEmail = async (email, fullName, userType, verificationToken) => {
-    const frontendUrl = process.env.FRONTEND_URL || 'https://likhog.onrender.com';
-    const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+  const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000';
+  const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
     
-    const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: 'LikhoG - Verify Your Email Address',
-        html: `
-            <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
-                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px; text-align: center; color: white;">
-                    <h1 style="margin: 0; font-size: 28px;">Welcome to LikhoG!</h1>
-                    <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Please verify your email to get started</p>
-                </div>
+  const mailOptions = {
+    from: emailUser || process.env.EMAIL_USER,
+    to: email,
+    subject: 'LikhoG - Verify Your Email Address',
+    html: `
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px; text-align: center; color: white;">
+          <h1 style="margin: 0; font-size: 28px;">Welcome to LikhoG!</h1>
+          <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Please verify your email to get started</p>
+        </div>
                 
-                <div style="padding: 30px; background: #f9f9f9; border-radius: 0 0 10px 10px;">
-                    <h2 style="color: #333; margin-top: 0;">Hello ${fullName}!</h2>
-                    <p style="color: #666; line-height: 1.6;">
-                        Thank you for registering as a <strong>${userType}</strong> on LikhoG. 
-                        To complete your registration and start using your account, please verify your email address by clicking the button below.
-                    </p>
+        <div style="padding: 30px; background: #f9f9f9; border-radius: 0 0 10px 10px;">
+          <h2 style="color: #333; margin-top: 0;">Hello ${fullName}!</h2>
+          <p style="color: #666; line-height: 1.6;">
+            Thank you for registering as a <strong>${userType}</strong> on LikhoG. 
+            To complete your registration and start using your account, please verify your email address by clicking the button below.
+          </p>
                     
-                    <div style="text-align: center; margin: 30px 0;">
-                        <a href="${verificationUrl}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; display: inline-block; font-weight: bold; font-size: 16px;">
-                            Verify Email Address
-                        </a>
-                    </div>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationUrl}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; display: inline-block; font-weight: bold; font-size: 16px;">
+              Verify Email Address
+            </a>
+          </div>
                     
-                    <p style="color: #999; font-size: 14px; line-height: 1.5;">
-                        If the button doesn't work, copy and paste this link into your browser:<br>
-                        <a href="${verificationUrl}" style="color: #667eea; word-break: break-all;">${verificationUrl}</a>
-                    </p>
+          <p style="color: #999; font-size: 14px; line-height: 1.5;">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${verificationUrl}" style="color: #667eea; word-break: break-all;">${verificationUrl}</a>
+          </p>
                     
-                    <p style="color: #999; font-size: 14px;">
-                        This verification link will expire in 24 hours for security reasons.
-                    </p>
+          <p style="color: #999; font-size: 14px;">
+            This verification link will expire in 24 hours for security reasons.
+          </p>
                     
-                    <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+          <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
                     
-                    <p style="color: #999; font-size: 12px; text-align: center;">
-                        If you didn't create an account on LikhoG, you can safely ignore this email.
-                    </p>
-                </div>
-            </div>
-        `
-    };
+          <p style="color: #999; font-size: 12px; text-align: center;">
+            If you didn't create an account on LikhoG, you can safely ignore this email.
+          </p>
+        </div>
+      </div>
+    `
+  };
     
-    return await transporter.sendMail(mailOptions);
+  return await transporter.sendMail(mailOptions);
 };
 
 //user registration route
@@ -129,35 +155,44 @@ userApp.post(
     newUser.createdAt = new Date();
     
     //create user
-    await usercollection.insertOne(newUser);
-      
-    // Send verification email
-    try {
-      // Generate verification token
-      const verificationToken = jwt.sign(
-          { 
-              email: newUser.email, 
-              username: newUser.username,
-              userType: 'user' 
-          },
-          process.env.SECRET_KEY,
-          { expiresIn: '24h' }
-      );
-        
-        await sendVerificationEmail(newUser.email, newUser.fullName, 'user', verificationToken);
-        
-        //send res
-        res.status(201).send({ 
-          message: "Account created successfully! Please check your email to verify your account before signing in.",
-          emailSent: true
+    console.log('Creating user for email:', newUser.email);
+    const insertResult = await usercollection.insertOne(newUser);
+    console.log('User insert result:', {
+      acknowledged: insertResult.acknowledged,
+      insertedId: insertResult.insertedId
+    });
+
+    // Generate verification token (used in email). Do NOT await email sending - send it asynchronously
+    const verificationToken = jwt.sign(
+      {
+        email: newUser.email,
+        username: newUser.username,
+        userType: 'user'
+      },
+      process.env.SECRET_KEY,
+      { expiresIn: '24h' }
+    );
+
+    // Respond immediately so client is not blocked by email sending
+    res.status(201).send({
+      message: "Account created successfully! A verification email will be sent shortly. Please check your email to verify your account before signing in.",
+      emailQueued: true
+    });
+
+    // Send verification email in background and log result. This must NOT block the response.
+    sendVerificationEmail(newUser.email, newUser.fullName, 'user', verificationToken)
+      .then((info) => {
+        console.log('Async verification email result:', {
+          to: info && info.envelope ? info.envelope.to : newUser.email,
+          messageId: info && info.messageId,
+          accepted: info && info.accepted,
+          rejected: info && info.rejected,
+          response: info && info.response
         });
-      } catch (emailError) {
-        console.error('Error sending verification email:', emailError);
-        res.status(201).send({ 
-          message: "Account created successfully, but failed to send verification email. Please contact support.",
-          emailSent: false
-        });
-      }
+      })
+      .catch((emailError) => {
+        console.error('Error sending verification email (async):', emailError && emailError.message ? emailError.message : emailError);
+      });
   })
 );
 

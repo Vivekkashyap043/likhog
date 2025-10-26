@@ -40,10 +40,15 @@ function Signup() {
         res = await axios.post(API_ENDPOINTS.AUTHOR.REGISTER, userObj);
       }
       
-      if (res.status === 201) {
-        setSignupSuccess(true);
+      // Treat any 2xx status code as success to handle servers that return 200 or 201
+      if (res.status >= 200 && res.status < 300) {
+        // After successful registration, redirect user to a dedicated "verification email sent" page.
+        // Pass the registered email in navigation state so the page can display it.
+        navigate('/verify-email-sent', { state: { email: userObj.email } });
+        return;
       } else {
-        setErrorMessage(res.data.message);
+        console.warn('Unexpected registration response status:', res.status, res.data);
+        setErrorMessage(res.data?.message || 'Registration failed.');
       }
     } catch (error) {
       setErrorMessage(error.response?.data?.message || "Something went wrong. Please try again.");

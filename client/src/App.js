@@ -11,6 +11,7 @@ import Signin from './components/signin/Signin';
 import ForgotPassword from './components/forgot-password/ForgotPassword';
 import ResetPassword from './components/reset-password/ResetPassword';
 import EmailVerification from './components/email-verification/EmailVerification';
+import EmailSent from './components/email-verification/EmailSent';
 import UserProfile from './components/user-profile/UserProfile';
 import AuthorProfile from './components/author-profile/AuthorProfile'
 import Articles from './components/articles/Articles';
@@ -72,6 +73,10 @@ function App() {
       {
         path:"/verify-email",
         element:<EmailVerification />
+      },
+      {
+        path: "/verify-email-sent",
+        element: <EmailSent />
       },
       {
         path:"/user-profile",

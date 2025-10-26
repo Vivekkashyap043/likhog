@@ -18,13 +18,38 @@ authorApp.use((req, res, next) => {
   next();
 });
 
-// Configure nodemailer transporter
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-    }
+// Configure nodemailer transporter (flexible env var names)
+const smtpUser = process.env.EMAIL_USER || process.env.EMAIL_USERNAME || process.env.SMTP_USER;
+const smtpPass = process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS || process.env.SMTP_PASS;
+const smtpHost = process.env.SMTP_HOST || process.env.EMAIL_HOST;
+const smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : undefined;
+const smtpSecure = (process.env.SMTP_SECURE === 'true') || false;
+
+let transporterConfig;
+if (smtpHost) {
+  transporterConfig = {
+    host: smtpHost,
+    port: smtpPort || 587,
+    secure: smtpSecure,
+    auth: smtpUser && smtpPass ? { user: smtpUser, pass: smtpPass } : undefined,
+  };
+} else if (smtpUser && smtpPass) {
+  // fallback to well-known services (Gmail) when only credentials are provided
+  transporterConfig = { service: 'gmail', auth: { user: smtpUser, pass: smtpPass } };
+} else {
+  // Last-resort: jsonTransport so sendMail doesn't throw but logs the payload (useful for local dev)
+  transporterConfig = { jsonTransport: true };
+}
+
+const transporter = nodemailer.createTransport(transporterConfig);
+
+// verify transporter at startup to get early feedback
+transporter.verify((err, success) => {
+  if (err) {
+    console.error('Nodemailer transporter verification failed:', err && err.message ? err.message : err);
+  } else {
+    console.log('Nodemailer transporter is ready to send messages');
+  }
 });
 
 // Send verification email function
@@ -129,36 +154,39 @@ authorApp.post(
     newAuthor.emailVerifiedAt = null;
     newAuthor.createdAt = new Date();
     
-    //create author
-    await authorscollection.insertOne(newAuthor);
-      
-    // Send verification email
+    //create author (insert into DB)
+    const insertResult = await authorscollection.insertOne(newAuthor);
+
+    // respond immediately (do not block on email delivery)
+    res.status(201).send({
+      message: "Account created successfully! If your email server is reachable, a verification email will be sent shortly.",
+      emailQueued: true,
+      insertedId: insertResult.insertedId
+    });
+
+    // Generate verification token and send email asynchronously. Log results for debugging.
     try {
-      // Generate verification token
       const verificationToken = jwt.sign(
-          { 
-              email: newAuthor.email, 
-              username: newAuthor.username,
-              userType: 'author' 
-          },
-          process.env.SECRET_KEY,
-          { expiresIn: '24h' }
+        {
+          email: newAuthor.email,
+          username: newAuthor.username,
+          userType: 'author',
+        },
+        process.env.SECRET_KEY || 'temporary_secret_for_dev',
+        { expiresIn: '24h' }
       );
-        
-        await sendVerificationEmail(newAuthor.email, newAuthor.fullName, 'author', verificationToken);
-        
-        //send res
-        res.status(201).send({ 
-          message: "Account created successfully! Please check your email to verify your account before signing in.",
-          emailSent: true
+
+      // call sendVerificationEmail but don't await - handle resolution for logs
+      sendVerificationEmail(newAuthor.email, newAuthor.fullName, 'author', verificationToken)
+        .then(info => {
+          console.log(`Verification email sent to ${newAuthor.email}. nodemailer info:`, info && info.messageId ? { messageId: info.messageId, accepted: info.accepted, rejected: info.rejected } : info);
+        })
+        .catch(emailError => {
+          console.error(`Failed to send verification email to ${newAuthor.email}:`, emailError && emailError.message ? emailError.message : emailError);
         });
-      } catch (emailError) {
-        console.error('Error sending verification email:', emailError);
-        res.status(201).send({ 
-          message: "Account created successfully, but failed to send verification email. Please contact support.",
-          emailSent: false
-        });
-      }
+    } catch (tokenError) {
+      console.error('Failed to generate verification token:', tokenError && tokenError.message ? tokenError.message : tokenError);
+    }
   })
 );
 

@@ -2,6 +2,15 @@
 const express = require('express');
 const app = express();
 require('dotenv').config() 
+// Log key environment variables (sanitized) to help debug email/SERVER config
+console.log('Server starting with env:', {
+    PORT: process.env.PORT || 5000,
+    DB_URL_set: !!process.env.DB_URL,
+    FRONTEND_URL: process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000',
+    EMAIL_HOST: process.env.EMAIL_HOST || process.env.SMTP_HOST || (process.env.EMAIL_USER ? 'gmail (default)' : 'not-set'),
+    EMAIL_PORT: process.env.EMAIL_PORT || process.env.SMTP_PORT || 'not-set',
+    EMAIL_USER_set: !!(process.env.EMAIL_USER || process.env.EMAIL_USERNAME)
+});
 const mongoClient=require('mongodb').MongoClient;
 const path=require('path')
 const cors = require('cors')

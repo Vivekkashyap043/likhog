@@ -16,19 +16,37 @@ commonApp.use((req, res, next) => {
     next();
 });
 
-// Configure nodemailer transporter
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-    }
-});
+// Configure nodemailer transporter. Accept multiple env var names for compatibility
+const emailHost = process.env.EMAIL_HOST || process.env.SMTP_HOST || process.env.EMAIL_SMTP_HOST;
+const emailPort = process.env.EMAIL_PORT || process.env.SMTP_PORT;
+const emailUser = process.env.EMAIL_USER || process.env.EMAIL_USERNAME;
+const emailPass = process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS || process.env.EMAIL_PASSWD;
 
-// Verify email configuration on startup
+const transporterConfig = emailHost
+  ? {
+      host: emailHost,
+      port: emailPort ? Number(emailPort) : 587,
+      secure: String(process.env.EMAIL_SECURE || process.env.SMTP_SECURE || 'false') === 'true',
+      auth: {
+        user: emailUser,
+        pass: emailPass,
+      },
+    }
+  : {
+      service: 'gmail',
+      auth: {
+        user: emailUser,
+        pass: emailPass,
+      },
+    };
+
+const transporter = nodemailer.createTransport(transporterConfig);
+
+// Verify email configuration on startup and log helpful debug info
 transporter.verify((error, success) => {
     if (error) {
-        console.log('Email configuration error:', error);
+        console.error('Email configuration error:', error && error.message ? error.message : error);
+        console.error('SMTP config used:', transporterConfig);
     } else {
         console.log('Email service is ready to send messages');
     }
@@ -124,7 +142,23 @@ const sendVerificationEmail = async (email, fullName, userType, verificationToke
         `
     };
     
-    return await transporter.sendMail(mailOptions);
+    try {
+        console.log(`Attempting to send verification email to ${email} (userType=${userType})`);
+        console.log('Verification link:', verificationUrl);
+        const info = await transporter.sendMail(mailOptions);
+        // Log useful info for debugging (do not log credentials)
+        console.log('Verification email sent:', {
+            to: info.envelope ? info.envelope.to : mailOptions.to,
+            messageId: info.messageId,
+            accepted: info.accepted || [],
+            rejected: info.rejected || [],
+            response: info.response
+        });
+        return info;
+    } catch (err) {
+        console.error('Error in sendVerificationEmail:', err && err.message ? err.message : err);
+        throw err;
+    }
 };
 
 // Send password reset email
@@ -175,12 +209,28 @@ const sendPasswordResetEmail = async (email, fullName, userType, resetToken) => 
         `
     };
     
-    return await transporter.sendMail(mailOptions);
+    try {
+        console.log(`Attempting to send password reset email to ${email} (userType=${userType})`);
+        console.log('Reset link:', resetUrl);
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Password reset email sent:', {
+            to: info.envelope ? info.envelope.to : mailOptions.to,
+            messageId: info.messageId,
+            accepted: info.accepted || [],
+            rejected: info.rejected || [],
+            response: info.response
+        });
+        return info;
+    } catch (err) {
+        console.error('Error in sendPasswordResetEmail:', err && err.message ? err.message : err);
+        throw err;
+    }
 };
 
 // Email verification endpoint
 commonApp.post('/send-verification', expressAsyncHandler(async (req, res) => {
     const { email, username, userType } = req.body;
+    console.log('Received /send-verification request:', { email, username, userType });
     
     if (!email || !username || !userType) {
         return res.status(400).send({ message: "Email, username, and user type are required" });
