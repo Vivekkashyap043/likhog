@@ -175,10 +175,5 @@ Author: Vivek Kashyap — contact: vivekkashyap043@gmail.com
  - Add file/image uploads and a rich-text editor for articles.
  - Add rate-limiting and stronger security layers for production.
 
- ---
-
- If anything in this README is unclear or you want me to add screenshots or step-by-step walkthroughs (e.g., how to create a Gmail App Password), tell me which part and I'll expand it. Happy to add a short "quick start" script or docker-compose file if you want a one-command dev environment.
-
- ---
 
  Author: Vivek Kashyap — contact: vivekkashyap043@gmail.com
