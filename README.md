@@ -1,5 +1,258 @@
 # LikhoG — Full-stack Blogging Platform
 
+Concise, developer-friendly README with a clear, step-by-step flow: what this project is, how to clone it, how to configure, run, test, and debug both backend and frontend. Use PowerShell on Windows (examples provided).
+
+---
+
+## 1) Project overview
+
+LikhoG is a lightweight blogging platform with two roles:
+- Readers: browse, comment and like articles.
+- Authors: create, edit and publish articles.
+
+Architecture: React frontend (Create React App) + Express backend (Node.js) + MongoDB. The backend handles registration/login, article management, comments, likes, and sends verification/password-reset emails using nodemailer.
+
+Key design choices
+- Registration responds immediately (201) and the server sends verification emails asynchronously — avoids UI hangs when SMTP is slow.
+- Email sending code accepts multiple environment variable names for easier local and hosted deployments.
+
+---
+
+## 2) Clone repository
+
+Open PowerShell and run:
+
+```powershell
+cd D:\projects\bloging\
+git clone https://github.com/Vivekkashyap043/likhog.git
+cd likhog
+```
+
+---
+
+## 3) Prerequisites
+
+- Node.js (v16+ recommended)
+- npm (or yarn)
+- MongoDB (local or Atlas)
+- Optional: an SMTP testing account (Mailtrap or Ethereal) for email testing
+
+---
+
+## 4) Environment variables (server/.env)
+
+Create `server/.env` (do NOT commit secrets). Minimal recommended variables:
+
+- `PORT` (default 4000)
+- `MONGO_URL` — MongoDB connection string
+- `SECRET_KEY` — JWT signing secret
+- `FRONTEND_URL` — e.g., `http://localhost:3000`
+
+SMTP options (choose one approach):
+- Custom SMTP: `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` ("true"/"false"), `SMTP_USER`, `SMTP_PASS`
+- Simple (Gmail): `EMAIL_USER`, `EMAIL_PASSWORD` (use Gmail App Password)
+
+The server accepts several env var name variations — see server code (`server/APIs/*-api.js`) for exact fallbacks.
+
+---
+
+## 5) Quick start — Backend (server)
+
+1. Install dependencies
+
+```powershell
+cd server
+npm install
+```
+
+2. Configure `.env` (copy `server/.env.example`)
+
+3. Start server
+
+```powershell
+# default port from .env (or 4000)
+node server.js
+
+# or temporarily run on a different port
+$env:PORT=5000; node server.js
+```
+
+Watch the console for transporter verification logs (nodemailer.verify) and DB connection messages.
+
+---
+
+## 6) Quick start — Frontend (client)
+
+1. Install deps and start
+
+```powershell
+cd client
+npm install
+npm start
+```
+
+2. Optional: set API base URL if backend runs on non-standard port
+
+```powershell
+setx REACT_APP_API_BASE_URL "http://localhost:5000"
+# restart the client after setting env
+```
+
+Frontend runs on `http://localhost:3000` by default.
+
+---
+
+## 7) How the registration + verification flow works (summary)
+
+1. User submits signup form in the client.
+2. Client POSTs to `/user-api/user` or `/author-api/author`.
+3. Backend validates, hashes password, inserts user with `isEmailVerified: false`.
+4. Backend returns HTTP 201 immediately (emailQueued: true).
+5. Backend generates a 24h verification JWT and sends an email with a link to `${FRONTEND_URL}/verify-email?token=...` asynchronously.
+6. User clicks the link and frontend calls `/common-api/verify-email` to mark the account verified.
+
+---
+
+## 8) Email testing (recommended for local dev)
+
+- Mailtrap: sign up at https://mailtrap.io, set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` in `server/.env`.
+- Ethereal: programmatic test accounts (nodemailer) — preview URL shown in server logs.
+
+Server logs will show:
+- transporter.verify success or detailed error
+- sendMail result (messageId, accepted, rejected, response) or error messages
+
+If transporter.verify fails on startup, fix SMTP env or use Mailtrap/Ethereal.
+
+---
+
+## 9) API quick reference
+
+All endpoints are mounted under paths like `/user-api`, `/author-api`, and `/common-api`.
+
+- POST /user-api/user — Register user { fullName, email, password }
+- POST /user-api/login — Login { email, password }
+- POST /author-api/author — Register author { fullName, email, password }
+- POST /author-api/login — Author login
+- POST /author-api/article — Add article (protected)
+- GET /user-api/articles — Get articles (protected)
+- POST /user-api/comment/:articleId — Post comment (protected)
+- POST /user-api/like/:articleId — Toggle like (protected)
+- POST /user-api/view/:articleId — Count view (protected)
+- POST /common-api/verify-email — Verify email (token)
+- POST /common-api/forgot-password — Start reset flow
+- POST /common-api/reset-password — Reset password (token)
+
+For exact request/response shapes check the route handlers in `server/APIs/`.
+
+---
+
+## 10) Database schema (collections)
+
+The app uses three primary collections: `userscollection`, `authorscollection`, and `articlescollection`.
+
+### `userscollection` (users)
+
+- _id: ObjectId (Mongo)
+- username: string (unique, often derived from email)
+- fullName: string
+- email: string (unique)
+- password: string (bcrypt hash)
+- isEmailVerified: boolean
+- emailVerifiedAt: Date | null
+- createdAt: Date
+
+### `authorscollection` (authors)
+
+- _id: ObjectId
+- username: string
+- fullName: string
+- email: string
+- password: string
+- isEmailVerified: boolean
+- emailVerifiedAt: Date | null
+- createdAt: Date
+
+### `articlescollection` (articles)
+
+- _id: ObjectId
+- articleId: number (app-level id; client sets Date.now())
+- title: string
+- content: string
+- username: string (author username)
+- authorFullName: string (denormalized)
+- category: string
+- dateOfCreation: Date
+- dateOfModification: Date
+- status: boolean (true = published)
+- views: number
+- viewedUsers: array of usernames
+- likes: number
+- likedUsers: array of usernames
+- comments: array of comment objects
+
+Comment object shape (embedded in article):
+- username: string
+- fullName: string
+- text: string
+- createdAt: Date
+
+Notes: comments are embedded; likes and views use both counters and arrays of usernames to support toggling and de-duplication.
+
+---
+
+## 11) Troubleshooting & debugging
+
+Common problems and how to debug them quickly.
+
+- Server fails to start: EADDRINUSE (port in use)
+
+  ```powershell
+  netstat -ano | findstr :4000
+  taskkill /PID <pid> /F
+  # or run server on another port:
+  $env:PORT=5000; node server.js
+  ```
+
+- SMTP / nodemailer issues
+
+  - Check server startup logs for transporter.verify messages.
+  - Fix credentials, host/port, or use Mailtrap/Ethereal.
+  - Gmail: use an App Password for `EMAIL_PASSWORD`.
+
+- API debugging tips
+
+  - Use Postman / HTTPie / curl to hit endpoints directly and inspect server logs.
+  - Add console.log in route handlers (server/APIs) to inspect payloads and DB results.
+
+---
+
+## 12) Testing summary
+
+- Manual tests: signup, check server logs for verification link, click link (or copy/paste preview URL from Ethereal), verify account, login, create article, comment, like, view.
+- Automated testing: none included; recommend adding integration tests using Jest + Supertest and using Ethereal for email assertions.
+
+---
+
+## 13) Next steps & improvements
+
+- Centralize mail logic into `server/utils/mail.js` and reuse across APIs.
+- Add integration tests for registration/verification flows (Ethereal in CI).
+- Add Docker Compose for developer experience (Mongo + server + optional Mailtrap container).
+
+---
+
+If you'd like I can:
+- Add a tiny Ethereal test script in `server/tools/` that registers a test user and prints the verification preview URL.
+- Propagate the flexible SMTP + async-email pattern to any APIs not yet updated.
+
+Choose one and I'll implement it next.
+
+---
+
+Author: Vivek Kashyap — contact: vivekkashyap043@gmail.com
+# LikhoG — Full-stack Blogging Platform
+
 Welcome to LikhoG. This README explains the architecture, important flows (registration → verification → login), technologies used, and step-by-step setup instructions for both frontend and backend. All commands below are PowerShell-ready.
 
 ## Contents
